@@ -1,85 +1,73 @@
 <template>
-  <h2>App</h2>
-  fistName: <input v-model="user.firstName"><br>
-  lastName: <input v-model="user.lastName"><br>
-  fullName1: <input v-model="fullName1"><br>
-  fullName2: <input v-model="fullName2"><br>
-  fullName3: <input v-model="fullName3"><br>
+<div>
+  <h2>x: {{x}}, y: {{y}}</h2>
 
+  <hr>
+
+  <h3 v-if="loading">正在加载中...</h3>
+  <h3 v-else-if="errorMsg">{{errorMsg}}</h3>
+  <!-- <ul v-else>
+    <li>{{data.id}}</li>
+    <li>{{data.name}}</li>
+    <li>{{data.distance}}</li>
+  </ul> -->
+  <ul v-for="item in data" :key="item.id">
+    <li>{{item.id}}</li>
+    <li>{{item.title}}</li>
+    <li>{{item.price}}</li>
+  </ul>
+</div>
 </template>
 
 <script lang="ts">
-import { reactive } from 'vue'
-/*
-计算属性与监视
-1. computed函数: 
-  与computed配置功能一致
-  只有getter
-  有getter和setter
-2. watch函数
-  与watch配置功能一致
-  监视指定的一个或多个响应式数据, 一旦数据变化, 就自动执行监视回调
-  默认初始时不执行回调, 但可以通过配置immediate为true, 来指定初始时立即执行第一次
-  通过配置deep为true, 来指定深度监视
-3. watchEffect函数
-  不用直接指定要监视的数据, 回调函数中使用的哪些响应式数据就监视哪些响应式数据
-  默认初始时就会执行第一次, 从而可以收集需要监视的数据
-  监视数据发生变化时回调
+
+/* 
+在组件中引入并使用自定义hook
+自定义hook的作用类似于vue2中的mixin技术
+自定义Hook的优势: 很清楚复用功能代码的来源, 更清楚易懂
 */
 
-import {computed, watch, watchEffect, ref} from 'vue'
+import useMousePosition from './hooks/useMousePosition'
+import request from './hooks/request'
+import { watch } from 'vue'
+
+
+interface AddressData {
+  id: number;
+  name: string;
+  distance: string;
+}
+
+interface PrductData {
+  id: number;
+  title: string;
+  price: number;
+}
 
 export default {
+  setup() {
 
-  setup () {
+    const {x, y} = useMousePosition()
 
-    const user = reactive({
-      firstName: 'A',
-      lastName: 'B'
-    })
+    // const proxy = reactive({x2:1, y2:2})
+    // const {x2, y2} = proxy
 
-    // 计算属性: getter
-    const fullName1 = computed(() => {
-      console.log('fullName1 getter')
-      return user.firstName + '-' + user.lastName
-    })
-    console.log(fullName1)
+    // const {loading, data, errorMsg} = request<AddressData>('/data/address.json')
+    const {loading, data, errorMsg} = request<PrductData[]>('/data/products.json')
 
-    // 计算属性: getter和setter
-    const fullName2 = computed({
-      get () {
-        console.log('fullName2 getter')
-        return user.firstName + '-' + user.lastName
-      },
-      set (value: string) {
-        console.log('fullName2 setter')
-        const names = value.split('-')
-        user.firstName = names[0]
-        user.lastName = names[1]
+    watch(data, () => {
+      if (data.value) {
+        // console.log('---', data.value.name)
+        console.log('---', data.value[1].title)
       }
     })
     
-    const fullName3 = ref<string>('')
-    // 监视指定的数据
-    watch(user, ({firstName, lastName}) => {
-      console.log('watch user')
-      fullName3.value = firstName + '-' + lastName
-    }, {immediate: true, deep: true})
-
-    // 监视所有用的响应式数据
-    watchEffect(() => {
-      console.log('watchEffect')
-      const names = fullName3.value.split('-')
-      user.firstName = names[0]
-      user.lastName = names[1]
-    })
-
-
     return {
-      user,
-      fullName1,
-      fullName2,
-      fullName3
+      x,
+      y,
+      loading, 
+      data, 
+      errorMsg
     }
   }
 }
