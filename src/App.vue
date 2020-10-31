@@ -1,61 +1,85 @@
 <template>
-  <h2>name: {{user.name}}</h2>
-  <h2>age: {{user.age}}</h2>
-  <h2>wife: {{user.wife}}</h2>
-  <hr>
-  <button @click="update">更新</button>
+  <h2>App</h2>
+  fistName: <input v-model="user.firstName"><br>
+  lastName: <input v-model="user.lastName"><br>
+  fullName1: <input v-model="fullName1"><br>
+  fullName2: <input v-model="fullName2"><br>
+  fullName3: <input v-model="fullName3"><br>
+
 </template>
 
 <script lang="ts">
 import { reactive } from 'vue'
-/* 
-reactive: 
-  作用: 定义多个数据的响应式
-  const proxy = reactive(obj): 接收一个普通对象然后返回该普通对象的响应式代理器对象
-  响应式转换是“深层的”：会影响对象内部所有嵌套的属性
-  内部基于 ES6 的 Proxy 实现，通过代理对象操作源对象内部数据都是响应式的
+/*
+计算属性与监视
+1. computed函数: 
+  与computed配置功能一致
+  只有getter
+  有getter和setter
+2. watch函数
+  与watch配置功能一致
+  监视指定的一个或多个响应式数据, 一旦数据变化, 就自动执行监视回调
+  默认初始时不执行回调, 但可以通过配置immediate为true, 来指定初始时立即执行第一次
+  通过配置deep为true, 来指定深度监视
+3. watchEffect函数
+  不用直接指定要监视的数据, 回调函数中使用的哪些响应式数据就监视哪些响应式数据
+  默认初始时就会执行第一次, 从而可以收集需要监视的数据
+  监视数据发生变化时回调
 */
+
+import {computed, watch, watchEffect, ref} from 'vue'
+
 export default {
+
   setup () {
 
-    const obj = {
-      name: 'tom',
-      age: 23,
-      wife: {
-        name: 'marry',
-        age: 20,
-        likes: ['a', 'b', 'c']
+    const user = reactive({
+      firstName: 'A',
+      lastName: 'B'
+    })
+
+    // 计算属性: getter
+    const fullName1 = computed(() => {
+      console.log('fullName1 getter')
+      return user.firstName + '-' + user.lastName
+    })
+    console.log(fullName1)
+
+    // 计算属性: getter和setter
+    const fullName2 = computed({
+      get () {
+        console.log('fullName2 getter')
+        return user.firstName + '-' + user.lastName
       },
-    }
+      set (value: string) {
+        console.log('fullName2 setter')
+        const names = value.split('-')
+        user.firstName = names[0]
+        user.lastName = names[1]
+      }
+    })
+    
+    const fullName3 = ref<string>('')
+    // 监视指定的数据
+    watch(user, ({firstName, lastName}) => {
+      console.log('watch user')
+      fullName3.value = firstName + '-' + lastName
+    }, {immediate: true, deep: true})
 
-    // reactive返回一个代理对象, 内部管理的是被代理对象(也就是包含多个属性数据的对象)
-    const user = reactive<any>(obj)
-
-    console.log(user)
-
-    function update () {
-
-      // 直接更新原始对象的数据 ==> 不会自动更新界面
-      // obj.name += '---'
-
-      // 必须通过代理对象来更新目标对象的数据 ==> 界面更新
-      // user.name += '--'
-      // user.age += 1
-      // user.wife.name += '++'  // 对象中所有层次的属性都是响应式的
-
-      // 添加新属性  ==> 界面会自动更新
-      // user.wife.sex = '女'
-      // 删除已有属性 ==> 界面会自动更新
-      // delete user.wife.age
-      // 直接通过下标替换数组元素
-      // user.wife.likes[1] = 'dd'
-      
-    }
+    // 监视所有用的响应式数据
+    watchEffect(() => {
+      console.log('watchEffect')
+      const names = fullName3.value.split('-')
+      user.firstName = names[0]
+      user.lastName = names[1]
+    })
 
 
     return {
       user,
-      update,
+      fullName1,
+      fullName2,
+      fullName3
     }
   }
 }
