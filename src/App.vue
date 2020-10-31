@@ -23,24 +23,33 @@ export default {
       age: 23,
       wife: {
         name: 'marry',
-        age: 20
-      }
+        age: 20,
+        likes: ['a', 'b', 'c']
+      },
     }
 
     // reactive返回一个代理对象, 内部管理的是被代理对象(也就是包含多个属性数据的对象)
-    const user = reactive(obj)
+    const user = reactive<any>(obj)
 
     console.log(user)
 
     function update () {
-      // 必须通过代理对象来更新目标对象的数据 ==> 界面更新
-      // user.name += '--'
-      // user.age += 1
-      user.wife.name += '++'  // 对象中所有层次的属性都是响应式的
-
 
       // 直接更新原始对象的数据 ==> 不会自动更新界面
       // obj.name += '---'
+
+      // 必须通过代理对象来更新目标对象的数据 ==> 界面更新
+      // user.name += '--'
+      // user.age += 1
+      // user.wife.name += '++'  // 对象中所有层次的属性都是响应式的
+
+      // 添加新属性  ==> 界面会自动更新
+      // user.wife.sex = '女'
+      // 删除已有属性 ==> 界面会自动更新
+      // delete user.wife.age
+      // 直接通过下标替换数组元素
+      // user.wife.likes[1] = 'dd'
+      
     }
 
 
