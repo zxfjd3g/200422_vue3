@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proxy 与 Reflect</title>
+</head>
+<body>
+  <script>
+    // 目标数据对象
+    const user = {
+      name: "John",
+      age: 12
+    }
+
+    /* 
+    proxyUser是代理对象, user是被代理对象
+    后面所有的操作都是通过代理对象来操作被代理对象内部属性
+    active()返回的就是一个代理对象
+    */
+    const proxyUser = new Proxy(user, {
+
+      // 当通过代理对象读取属性数据时回调
+      get(target, prop) {
+        console.log('劫持get()', prop)
+
+        // 通过Reflect读取目标对象上对应的属性值
+        return Reflect.get(target, prop)
+      },
+
+      // 当通过代理对象设置属性值或添加属性时回调
+      set(target, prop, val) {
+        console.log('劫持set()', prop, val)
+
+        // 通过Reflect给目标对象设置或添加属性
+        return Reflect.set(target, prop, val); // (2)
+      },
+
+      // 当通过代理对象删除属性时回调
+      deleteProperty (target, prop) {
+        console.log('劫持delete属性', prop)
+
+        // 通过Reflect删除目标对象的对应属性
+        return Reflect.deleteProperty(target, prop)
+      }
+    })
+    console.log(proxyUser)
+
+    // 读取属性值
+    console.log(proxyUser===user)
+    console.log(proxyUser.name, proxyUser.age)
+
+    // 设置属性值
+    proxyUser.name = 'bob'
+    proxyUser.age = 13
+    console.log(user)
+
+    // 添加属性
+    proxyUser.sex = '男'
+    console.log(user)
+
+    // 删除属性
+    delete proxyUser.sex
+    console.log(user)
+  </script>
+</body>
+</html>
