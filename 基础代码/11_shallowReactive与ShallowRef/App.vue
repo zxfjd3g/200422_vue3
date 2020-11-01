@@ -1,9 +1,14 @@
 <template>
   <h2>App</h2>
-  <button >更新</button>
+
+  <h3>m1: {{m1}}</h3>
+  <h3>m2: {{m2}}</h3>
+
+  <button @click="update">更新</button>
 </template>
 
 <script lang="ts">
+import { reactive, ref, shallowReactive, shallowRef } from 'vue'
 /* 
 shallowReactive与shallowRef
   shallowReactive: 只处理了对象内最外层属性的响应式(也就是浅响应式)
@@ -20,7 +25,17 @@ export default {
 
   setup () {
 
+    const m1 = reactive({a: 1, b: {c: 2}})
+    const m2 = ref({a: 1, b: {c: 2}})
+
+    const update = () => {
+
+    }
+
     return {
+      m1,
+      m2,
+      update,
     }
   }
 }

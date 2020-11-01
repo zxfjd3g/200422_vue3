@@ -1,16 +1,17 @@
 <template>
-  <button>更新</button>
+  <h2>Child</h2>
 </template>
 
 <script lang="ts">
-export default {
-  name: 'Child',
+const component = {
+  name: "child",
 
-  setup (props) {
+  setup () {
 
     return {
     }
   }
 }
 
+export default component
 </script>

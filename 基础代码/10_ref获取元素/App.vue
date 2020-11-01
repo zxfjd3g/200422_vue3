@@ -1,5 +1,9 @@
 <template>
   <h2>App</h2>
+
+  <input type="text">
+  ---
+  <input type="text">
 </template>
 
 <script lang="ts">
@@ -12,6 +16,7 @@ export default {
   setup() {
 
     return {
+      
     }
   },
 }

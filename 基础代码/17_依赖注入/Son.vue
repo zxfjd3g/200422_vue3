@@ -1,7 +1,7 @@
 <template>
-  <div>
-    <h2>子组件</h2>
-  </div>
+  <h2>子组件</h2>
+  <hr>
+  <GrandSon/>
 </template>
 
 <script lang="ts">

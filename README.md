@@ -1327,107 +1327,49 @@ export default {
 
 ```vue
 <template>
-  <h2>{{state.name}}</h2>
-  <h2>{{state.age}}</h2>
-  <hr>
-  <button @click="update">更新</button>
+  <h2>{{state}}</h2>
   <button @click="testToRaw">测试toRaw</button>
-  
+  <button @click="testMarkRaw">测试markRaw</button>
 </template>
 
 <script lang="ts">
 /* 
-toRaw
+toRaw: 得到reactive代理对象的目标数据对象
 */
 import {
-  reactive,
-  toRaw
+  markRaw,
+  reactive, toRaw,
 } from 'vue'
 export default {
   setup () {
-    const state = reactive({
+    const state = reactive<any>({
       name: 'tom',
       age: 25,
     })
 
-    const update = () => {
-      state.name += '--'  // 界面更新
+    const testToRaw = () => {
+      const user = toRaw(state)
+      user.age++  // 界面不会更新
+
     }
 
-    const testToRaw = () => {
-      // 临时读取得到代理对象代理的目标数据对象
-      const user = toRaw(state)
-      user.name += '++' // 更新数据界面也不会更新
-      console.log(state.name)
-      // 可能后面需要对原始数据对象进行处理: 比如深拷贝
+    const testMarkRaw = () => {
+      const likes = ['a', 'b']
+      // state.likes = likes
+      state.likes = markRaw(likes) // likes数组就不再是响应式的了
+      setTimeout(() => {
+        state.likes[0] += '--'
+      }, 1000)
     }
 
     return {
       state,
-      update,
-      testToRaw
+      testToRaw,
+      testMarkRaw,
     }
   }
 }
 </script>
-
-```
-
-```vue
-<template>
-  <h2>App</h2>
-  <p>{{state2.products}}</p>
-</template>
-
-<script lang="ts">
-/*
-markRaw: 
-  标记一个对象，使其永远不会转换为代理。返回对象本身
-应用场景:
-  有些值不应被设置为响应式的，例如复杂的第三方类实例或 Vue 组件对象。
-  当渲染具有不可变数据源的大列表时，跳过代理转换可以提高性能。
-*/
-
-import {
-  reactive,
-  markRaw,
-  isReactive,
-} from 'vue'
-
-export default {
-
-  setup () {
-    const state = markRaw({a: 1, b: {c: 'abc'}})
-    console.log(state)
-    console.log(isReactive(reactive(state)))  // false
-
-    const state2 = reactive({
-      products: new Array<any>()
-    })
-
-    setTimeout(() => {
-      // 得到所有商品列表显示
-      let ps = ['p1', 'p2', 'p3', 'p4']
-      /* 
-      对数组进行标记为原始数组对象 ==> 后面即使生成对应的proxy对象后, 更新内部数据也不会更新界面
-      如果明确数组后面不会再更新了, 就可以使用markRaw处理, 提交运行效率
-      */
-      ps = markRaw(ps)
-      state2.products = ps
-    }, 1000)
-
-    setTimeout(() => {
-      state2.products[0] += '--'
-    }, 2000)
-    
-
-    return {
-      state2
-    }
-  }
-}
-</script>
-
 ```
 
 
@@ -2003,7 +1945,7 @@ console.log(isProxy(readonly({})))
 
 ## 6.  新组件
 
-### 1) Fragment
+### 1) Fragment(片断)
 
 - 在Vue2中: 组件必须有一个根标签
 - 在Vue3中: 组件可以没有根标签, 内部会将多个标签包含在一个Fragment虚拟元素中
@@ -2018,11 +1960,183 @@ console.log(isProxy(readonly({})))
 
 
 
-### 2) Teleport
+### 2) Teleport(瞬移)
+
+- Teleport 提供了一种干净的方法, 让组件的html在父组件界面外的特定标签(很可能是body)下插入显示
+
+ModalButton.vue
+
+```vue
+<template>
+  <button @click="modalOpen = true">
+      Open full screen modal! (With teleport!)
+  </button>
+
+  <teleport to="body">
+    <div v-if="modalOpen" class="modal">
+      <div>
+        I'm a teleported modal! 
+        (My parent is "body")
+        <button @click="modalOpen = false">
+          Close
+        </button>
+      </div>
+    </div>
+  </teleport>
+</template>
+
+<script>
+import { ref } from 'vue'
+export default {
+  name: 'modal-button',
+  setup () {
+    const modalOpen = ref(false)
+    return {
+      modalOpen
+    }
+  }
+}
+</script>
+
+
+<style>
+.modal {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background-color: rgba(0,0,0,.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  width: 300px;
+  height: 300px;
+  padding: 5px;
+}
+</style>
+```
+
+App.vue
+
+```vue
+<template>
+  <h2>App</h2>
+  <modal-button></modal-button>
+</template>
+
+<script lang="ts">
+import ModalButton from './ModalButton.vue'
+
+export default {
+  setup() {
+    return {
+    }
+  },
+
+  components: {
+    ModalButton
+  }
+}
+</script>
+```
 
 
 
-### 3) Suspense
+### 3) Suspense(不确定的)
+
+- 它们允许我们的应用程序在等待异步组件时渲染一些后备内容，可以让我们创建一个平滑的用户体验
+
+```vue
+<template>
+  <Suspense>
+    <template v-slot:default>
+      <AsyncComp/>
+      <!-- <AsyncAddress/> -->
+    </template>
+
+    <template v-slot:fallback>
+      <h1>LOADING...</h1>
+    </template>
+  </Suspense>
+</template>
+
+<script lang="ts">
+/* 
+异步组件 + Suspense组件
+*/
+// import AsyncComp from './AsyncComp.vue'
+import AsyncAddress from './AsyncAddress.vue'
+import { defineAsyncComponent } from 'vue'
+const AsyncComp = defineAsyncComponent(() => import('./AsyncComp.vue'))
+export default {
+  setup() {
+    return {
+     
+    }
+  },
+
+  components: {
+    AsyncComp,
+    AsyncAddress
+  }
+}
+</script>
+```
+
+- AsyncComp.vue
+
+```vue
+<template>
+  <h2>AsyncComp22</h2>
+  <p>{{msg}}</p>
+</template>
+
+<script lang="ts">
+
+export default {
+  name: 'AsyncComp',
+  setup () {
+    // return new Promise((resolve, reject) => {
+    //   setTimeout(() => {
+    //     resolve({
+    //       msg: 'abc'
+    //     })
+    //   }, 2000)
+    // })
+    return {
+      msg: 'abc'
+    }
+  }
+}
+</script>
+```
+
+- AsyncAddress.vue
+
+```vue
+<template>
+<h2>{{data}}</h2>
+</template>
+
+<script lang="ts">
+import axios from 'axios'
+export default {
+  async setup() {
+    const result = await axios.get('/data/address.json')
+    return {
+      data: result.data
+    }
+  }
+}
+</script>
+```
 
 
 

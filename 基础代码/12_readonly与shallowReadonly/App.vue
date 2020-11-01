@@ -1,9 +1,13 @@
 <template>
   <h2>App</h2>
+  <h3>{{state}}</h3>
+
+  <button @click="update">更新</button>
 
 </template>
 
 <script lang="ts">
+import { reactive } from 'vue'
 /*
 readonly: 深度只读数据
   获取一个对象 (响应式或纯对象) 或 ref 并返回原始代理的只读代理。
@@ -17,8 +21,21 @@ shallowReadonly: 浅只读数据
 export default {
 
   setup () {
-    
+
+    const state = reactive({
+      a: 1,
+      b: {
+        c: 2
+      }
+    })
+
+    function update () {
+      
+    }
+
     return {
+      state,
+      update,
     }
   }
 }
