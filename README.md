@@ -1015,47 +1015,40 @@ export default {
 ```vue
 <template>
   <h2>App</h2>
-  <p>{{foo}}</p>
-  <p>{{bar}}</p>
+  <h3>foo: {{foo}}</h3>
+  <h3>bar: {{bar}}</h3>
+  <h3>foo2: {{foo2}}</h3>
+  <h3>bar2: {{bar2}}</h3>
 
-  <p>{{foo2}}</p>
-  <p>{{bar2}}</p>
+
 </template>
 
 <script lang="ts">
+import { reactive, toRefs } from 'vue'
 /*
 toRefs:
   将响应式对象中所有属性包装为ref对象, 并返回包含这些ref对象的普通对象
-  应用: 当从合成函数返回响应式对象时，toRefs 非常有用，这样消费组件就可以在不丢失响应式的情况下对返回的对象进行分解使用
+  应用: 当从合成函数返回响应式对象时，toRefs 非常有用，
+        这样消费组件就可以在不丢失响应式的情况下对返回的对象进行分解使用
 */
-
-import {
-  reactive,
-  toRefs,
-} from 'vue'
-
 export default {
 
   setup () {
 
     const state = reactive({
-      foo: 1,
-      bar: 2
+      foo: 'a',
+      bar: 'b',
     })
 
     const stateAsRefs = toRefs(state)
 
-    // ref 和 原始property “链接”
-    state.foo++
-    console.log(stateAsRefs.foo.value) // 2
+    setTimeout(() => {
+      state.foo += '++'
+      state.bar += '++'
+    }, 2000);
 
-    stateAsRefs.foo.value++
-    console.log(state.foo) // 3
+    const {foo2, bar2} = useReatureX()
 
-    // 直接解构出的每个变量都是ref响应式数据
-    const {foo2, bar2} = useFeatureX()
-
-    
     return {
       // ...state,
       ...stateAsRefs,
@@ -1065,19 +1058,17 @@ export default {
   },
 }
 
-function useFeatureX() {
+function useReatureX() {
   const state = reactive({
-    foo2: 1,
-    bar2: 2
+    foo2: 'a',
+    bar2: 'b',
   })
 
-  // 逻辑运行状态
   setTimeout(() => {
-    state.foo2++
-    state.bar2++
+    state.foo2 += '++'
+    state.bar2 += '++'
   }, 2000);
 
-  // 返回时转换为ref
   return toRefs(state)
 }
 
@@ -1096,19 +1087,16 @@ function useFeatureX() {
 ```vue
 <template>
   <h2>App</h2>
+  <input type="text">---
   <input type="text" ref="inputRef">
 </template>
 
 <script lang="ts">
+import { onMounted, ref } from 'vue'
 /* 
 ref获取元素: 利用ref函数获取组件中的标签元素
 功能需求: 让输入框自动获取焦点
 */
-import {
-  ref,
-  onMounted
-} from 'vue'
-
 export default {
   setup() {
     const inputRef = ref<HTMLElement|null>(null)
@@ -1123,14 +1111,82 @@ export default {
   },
 }
 </script>
-
 ```
 
 
 
 ## 4. Composition API(其它部分)
 
-### 1) readonly 与 shallowReadonly
+### 1) shallowReactive 与 shallowRef
+
+- shallowReactive : 只处理了对象内最外层属性的响应式(也就是浅响应式)
+- shallowRef: 只处理了value的响应式, 不进行对象的reactive处理
+
+- 什么时候用浅响应式呢?
+  -  一般情况下使用ref和reactive即可
+  -  如果有一个对象数据, 结构比较深, 但变化时只是外层属性变化 ===> shallowReactive
+  -  如果有一个对象数据, 后面会产生新的对象来替换 ===> shallowRef
+
+```vue
+<template>
+  <h2>App</h2>
+
+  <h3>m1: {{m1}}</h3>
+  <h3>m2: {{m2}}</h3>
+  <h3>m3: {{m3}}</h3>
+  <h3>m4: {{m4}}</h3>
+
+  <button @click="update">更新</button>
+</template>
+
+<script lang="ts">
+import { reactive, ref, shallowReactive, shallowRef } from 'vue'
+/* 
+shallowReactive与shallowRef
+  shallowReactive: 只处理了对象内最外层属性的响应式(也就是浅响应式)
+  shallowRef: 只处理了value的响应式, 不进行对象的reactive处理
+总结:
+  reactive与ref实现的是深度响应式, 而shallowReactive与shallowRef是浅响应式
+  什么时候用浅响应式呢?
+    一般情况下使用ref和reactive即可,
+    如果有一个对象数据, 结构比较深, 但变化时只是外层属性变化 ===> shallowReactive
+    如果有一个对象数据, 后面会产生新的对象来替换 ===> shallowRef
+*/
+
+export default {
+
+  setup () {
+
+    const m1 = reactive({a: 1, b: {c: 2}})
+    const m2 = shallowReactive({a: 1, b: {c: 2}})
+
+    const m3 = ref({a: 1, b: {c: 2}})
+    const m4 = shallowRef({a: 1, b: {c: 2}})
+
+    const update = () => {
+      // m1.b.c += 1
+      // m2.b.c += 1
+
+      // m3.value.a += 1
+      m4.value.a += 1
+    }
+
+    return {
+      m1,
+      m2,
+      m3,
+      m4,
+      update,
+    }
+  }
+}
+</script>
+
+```
+
+
+
+### 2) readonly 与 shallowReadonly
 
 - readonly: 
   - 深度只读数据
@@ -1145,19 +1201,12 @@ export default {
 ```vue
 <template>
   <h2>App</h2>
-  <p>{{count1}}</p>
-  <p>{{copy}}</p>
-
-  <p>{{state}}</p>
-  <p>{{copy2}}</p>
-
-  <p>{{copy3}}</p>
-
-  <p>{{state3}}</p>
-
+  <h3>{{state}}</h3>
+  <button @click="update">更新</button>
 </template>
 
 <script lang="ts">
+import { reactive, readonly, shallowReadonly } from 'vue'
 /*
 readonly: 深度只读数据
   获取一个对象 (响应式或纯对象) 或 ref 并返回原始代理的只读代理。
@@ -1168,149 +1217,38 @@ shallowReadonly: 浅只读数据
   在某些特定情况下, 我们可能不希望对数据进行更新的操作, 那就可以包装生成一个只读代理对象来读取数据, 而不能修改或删除
 */
 
-import {
-  reactive,
-  ref,
-  readonly,
-  shallowReadonly,
-  isReadonly,
-} from 'vue'
-
 export default {
 
   setup () {
-    const count1 = ref(1)
-    const copy = readonly(count1)
-    // console.log(count1, copy)
 
-    const state = reactive({a: {b: 2}})
-    const copy2 = readonly(state)
-    console.log(state, copy2)
-
-    const copy3 = readonly({x: {y: 3}})
-    console.log(copy3)
-
-    setTimeout(() => {
-      // count1.value += 1
-      // copy.value += 2 //警告: Set operation on key "value" failed: target is readonly
-      // delete copy.value // 警告: Delete operation on key "value" failed: target is readonly
-
-      // state.a.b++
-      // copy2.a.b++ // 警告: Set operation on key "count" failed: target is readonly
-
-      // copy3.x.y++ // 警告: Set operation on key "count" failed: target is readonly
-
-    }, 2000)
-
-
-    const state3 = shallowReadonly({
-      foo: 1,
-      nested: {
-        bar: 2
+    const state = reactive({
+      a: 1,
+      b: {
+        c: 2
       }
     })
 
-    // 改变状态本身的property将失败
-    // state3.foo++ // 警告: Set operation on key "foo" failed: target is readonly
+    // const rState1 = readonly(state)
+    const rState2 = shallowReadonly(state)
 
-    // 适用于嵌套对象
-    isReadonly(state3.nested) // false
-    state3.nested.bar++ // 适用
+    const update = () => {
+      // rState1.a++ // error
+      // rState1.b.c++ // error
+
+      // rState2.a++ // error
+      rState2.b.c++
+    }
     
     return {
-      count1,
-      copy,
-
       state,
-      copy2,
-
-      copy3,
-
-      state3
-    }
-  }
-}
-</script>
-
-```
-
-
-
-### 2) shallowReactive 与 shallowRef
-
-- shallowReactive : 只处理了对象内最外层属性的响应式(也就是浅响应式)
-- shallowRef: 只处理了value的响应式, 不进行对象的reactive处理
-
--  什么时候用浅响应式呢?
-  -  一般情况下使用ref和reactive即可
-  -  如果有一个对象数据, 结构比较深, 但变化时只是外层属性变化 ===> shallowReactive
-  -  如果有一个对象数据, 后面会产生新的对象来替换 ===> shallowRef
-
-```vue
-<template>
-  <h2>App</h2>
-  <p>m1: {{m1}}</p>
-  <p>m2: {{m2}}</p>
-  <p>m3: {{m3}}</p>
-  <p>m4: {{m4}}</p>
-  <button @click="update">更新</button>
-</template>
-
-<script lang="ts">
-/* 
-shallowReactive与shallowRef
-  shallowReactive: 只处理了对象内最外层属性的响应式(也就是浅响应式)
-  shallowRef: 只处理了value的响应式, 不进行对象的reactive处理
-总结:
-  reactive与ref实现的是深度响应式, 而shallowReactive与shallowRef是浅响应式
-  什么时候用浅响应式呢?
-    一般情况下使用ref和reactive即可,
-    如果有一个对象数据, 结构比较深, 但变化时只是外层属性变化 ===> shallowReactive
-    如果有一个对象数据, 后面会产生新的对象来替换 ===> shallowRef
-*/
-
-import {
-  reactive,
-  ref,
-  shallowReactive,
-  shallowRef,
-  isReactive
-} from 'vue'
-
-export default {
-
-  setup () {
-    const m1 = reactive({x: 1, y: {z: 'abc'}})
-    const m2 = shallowReactive({x: 1, y: {z: 'abc'}})
-    const m3 = ref({a1: 2, a2: {a3: 'abc'}})
-    const m4: any = shallowRef({a1: 2, a2: {a3: 'abc'}})
-    console.log(isReactive(m1.y))
-    console.log(isReactive(m2.y))
-    console.log(isReactive(m3.value.a2))
-    console.log(isReactive(m4.value.a2))
-
-
-    function update() {
-      // m2.y = {z: 'abc--'}  // 界面会更新
-      // m2.y.z = 'abc--' // 界面不会更新
-      // m1.y.z = 'abc--' // 界面会更新
-
-      m4.value.a1 += 1 // 界面不会更新
-      m4.value = {} // 界面会更新
-    }
-
-    return {
-      m1,
-      m2,
-      m3,
-      m4,
       update
     }
   }
 }
 </script>
-
 ```
+
+
 
 
 
@@ -1384,10 +1322,10 @@ export default {
 <template>
   <h2>App</h2>
   <p>{{state}}</p>
-  <p>{{fooRef}}</p>
   <p>{{foo}}</p>
+  <p>{{foo2}}</p>
 
-  <button @click="foo += '==='">更新</button>
+  <button @click="update">更新</button>
 
   <Child :foo="foo"/>
 </template>
@@ -1397,7 +1335,7 @@ export default {
 toRef:
   为源响应式对象上的某个属性创建一个 ref对象, 二者内部操作的是同一个数据值, 更新时二者是同步的
   区别ref: 拷贝了一份新的数据值单独操作, 更新时相互不影响
-  应用: 当要将 某个prop 的 ref 传递给复合函数时，toRef 很有用
+  应用: 当要将某个 prop 的 ref 传递给复合函数时，toRef 很有用
 */
 
 import {
@@ -1416,23 +1354,20 @@ export default {
       bar: 2
     })
 
-    // fooRef的value与state中的foo是关联的
-    const fooRef = toRef(state, 'foo')
+    const foo = toRef(state, 'foo')
+    const foo2 = ref(state.foo)
 
-    setTimeout(() => {
-      fooRef.value++
-      console.log(state.foo) // 2
+    const update = () => {
       state.foo++
-      console.log(fooRef.value) // 3
-    }, 2000)
-
-    const foo = ref('xxx')
-
+      // foo.value++
+      // foo2.value++  // foo和state中的数据不会更新
+    }
 
     return {
       state,
-      fooRef,
-      foo
+      foo,
+      foo2,
+      update,
     }
   },
 
@@ -1446,61 +1381,38 @@ export default {
 
 ```vue
 <template>
+  <h2>Child</h2>
   <h3>{{foo}}</h3>
-  <h3>{{fooRef}}</h3>
   <h3>{{length}}</h3>
-  <button @click="update">更新</button>
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  Ref,
-  toRef
-} from 'vue'
-export default defineComponent({
-  name: 'Child',
+import { computed, defineComponent, Ref, toRef } from 'vue'
 
+const component = defineComponent({
   props: {
     foo: {
-      type: String,
-      required: true
+      type: Number,
+      require: true
     }
   },
 
-  mounted () {
-    console.log(this, this.foo)
-  },
-
-  setup (props) {
-    console.log('---', props)
-    const fooRef = toRef(props, 'foo')
-    console.log('fooRef', fooRef)
-
-    const update = () => {
-      // props.foo += '----' // error
-    }
-
-    const {length} = useFoo(toRef(props, 'foo'))
+  setup (props, context) {
+    const length = useFeatureX(toRef(props, 'foo'))
 
     return {
-      fooRef,
-      update,
       length
     }
   }
 })
 
-function useFoo(fooRef: Ref) {
-  
-  const length = computed(() => {
-    return fooRef.value.length
-  })
-  return {
-    length
-  }
+function useFeatureX(foo: Ref) {
+  const lenth = computed(() => foo.value.length)
+
+  return lenth
 }
+
+export default component
 </script>
 
 ```
@@ -1510,13 +1422,13 @@ function useFoo(fooRef: Ref) {
 ### 5) customRef
 
 - 创建一个自定义的 ref，并对其依赖项跟踪和更新触发进行显式控制
-- 需求: 自定义 ref 实现 debounce
+- 需求: 使用 customRef 实现 debounce 的示例
 
 ```vue
 <template>
   <h2>App</h2>
-  <input v-model="text" placeholder="搜索关键字"/>
-  <p>{{text}}</p>
+  <input v-model="keyword" placeholder="搜索关键字"/>
+  <p>{{keyword}}</p>
 </template>
 
 <script lang="ts">
@@ -1524,7 +1436,8 @@ function useFoo(fooRef: Ref) {
 customRef:
   创建一个自定义的 ref，并对其依赖项跟踪和更新触发进行显式控制
 
-需求: 自定义 ref 实现 debounce
+需求: 
+  使用 customRef 实现 debounce 的示例
 */
 
 import {
@@ -1535,10 +1448,10 @@ import {
 export default {
 
   setup () {
-    const text = useDebouncedRef('')
-    
+    const keyword = useDebouncedRef('', 500)
+    console.log(keyword)
     return {
-      text
+      keyword
     }
   },
 }
@@ -1546,22 +1459,20 @@ export default {
 /* 
 实现函数防抖的自定义ref
 */
-function useDebouncedRef(value: any, delay = 200) {
+function useDebouncedRef<T>(value: T, delay = 200) {
   let timeout: number
   return customRef((track, trigger) => {
     return {
       get() {
-        console.log('get()')
         // 告诉Vue追踪数据
         track()
         return value
       },
-      set(newValue) {
-        console.log('set', newValue)
+      set(newValue: T) {
         clearTimeout(timeout)
         timeout = setTimeout(() => {
           value = newValue
-          // 告诉vue去触发界面更新
+          // 告诉Vue去触发界面更新
           trigger()
         }, delay)
       }
@@ -1570,7 +1481,6 @@ function useDebouncedRef(value: any, delay = 200) {
 }
 
 </script>
-
 ```
 
 
@@ -1585,17 +1495,23 @@ function useDebouncedRef(value: any, delay = 200) {
 ```vue
 <template>
   <h1>父组件</h1>
-  <button @click="colorRef='red'">红</button>
-  <button @click="setColor('yellow')">黄</button>
-  <button @click="setColor('blue')">蓝</button>
-  <hr>
+  <p>当前颜色: {{color}}</p>
+  <button @click="color='red'">红</button>
+  <button @click="color='yellow'">黄</button>
+  <button @click="color='blue'">蓝</button>
   
+  <hr>
   <Son />
 </template>
 
 <script lang="ts">
-import Son from './Son.vue'
 import { provide, ref } from 'vue'
+/* 
+- provide` 和 `inject` 提供依赖注入，功能类似 2.x 的 `provide/inject
+- 实现跨层级组件(祖孙)间通信
+*/
+
+import Son from './Son.vue'
 export default {
   name: 'ProvideInject',
   components: {
@@ -1603,25 +1519,16 @@ export default {
   },
   setup() {
     
-    // 向后代传递普通数据
-    provide('color',3)
-    
-    // 传递响应式数据
-    const colorRef = ref('red')
-    provide('colorRef',colorRef)
+    const color = ref('red')
 
-    function setColor (color: string) {
-      colorRef.value = color
-    }
+    provide('color', color)
 
     return {
-      colorRef,
-      setColor
+      color
     }
   }
 }
 </script>
-
 ```
 
 ```vue
@@ -1639,19 +1546,14 @@ export default {
   components: {
     GrandSon
   },
-  setup() {
-    
-  }
 }
 </script>
 ```
 
 ```vue
 <template>
-  <div>
-    <h3 :style="{color:color}">孙子组件: {{color}}</h3>
-    <h3 :style="{color:colorRef}">ref</h3>
-  </div>
+  <h3 :style="{color}">孙子组件: {{color}}</h3>
+  
 </template>
 
 <script lang="ts">
@@ -1659,11 +1561,9 @@ import { inject } from 'vue'
 export default {
   setup() {
     const color = inject('color')
-    console.log(color);
-    const colorRef = inject('colorRef')
+
     return {
-      color,
-      colorRef
+      color
     }
   }
 }
