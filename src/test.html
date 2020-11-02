@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+
+  <script src="./index.js"></script>
+  <script>
+    const proxy1 = shallowReactive({
+      a: {
+        b: 1,
+        c: [2, 3]
+      }
+    })
+    // proxy1.a = 'abc'
+    // delete proxy1.a
+    // proxy1.a.b = 2
+    // delete proxy1.a.b
+    // console.log(proxy1)
+
+    const proxy2 = reactive({
+      a: {
+        b: 1,
+        c: [2, 3]
+      }
+    })
+    // proxy2.a.b = 2
+    // delete proxy2.a.b
+    proxy2.a.c[0]++
+    console.log(proxy2)
+
+
+  </script>
+</body>
+</html>
