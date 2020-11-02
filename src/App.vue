@@ -1,52 +1,57 @@
 <template>
-  <h2>{{state}}</h2>
-  <button @click="testToRaw">测试toRaw</button>
-  <button @click="testMarkRaw">测试markRaw</button>
+  <h2>App</h2>
+  <input v-model="keyword" placeholder="搜索关键字"/>
+  <p>{{keyword}}</p>
 </template>
 
 <script lang="ts">
-/* 
-toRaw: 得到reactive代理对象的目标数据对象
+/*
+customRef:
+  创建一个自定义的 ref，并对其依赖项跟踪和更新触发进行显式控制
+
+需求: 
+  使用 customRef 实现 debounce 的示例
 */
+
 import {
-  markRaw,
-  reactive, toRaw,
+  ref,
+  customRef
 } from 'vue'
 
-interface UserInfo {
-  name: string;
-  age: number;
-  likes?: string[]
-}
 export default {
+
   setup () {
-    const state = reactive<UserInfo>({
-      name: 'tom',
-      age: 25,
-    })
-
-    const testToRaw = () => {
-      const user = toRaw(state)
-      console.log(user)
-      user.name += '--'
-    }
-
-    const testMarkRaw = () => {
-      const likes = ['a', 'b']  
-      // state.likes = likes
-      state.likes = markRaw(likes) // 如果数组内部数据后面不会再有修改
-      setTimeout(() => {
-        if (state.likes) {
-          state.likes[0] += '--'
-        }
-      }, 1000)
-    }
-
+    // const keyword = ref('abc')
+    const keyword = useDebouncedRef('abc', 500)
+    console.log(keyword)
     return {
-      state,
-      testToRaw,
-      testMarkRaw,
+      keyword
     }
-  }
+  },
 }
+
+/* 
+实现函数防抖的自定义ref
+*/
+function useDebouncedRef<T>(value: T, delay = 200) {
+  let timeoutId: number
+  return customRef((track, trigger) => {
+    return {
+      get() {
+        // 告诉Vue追踪数据
+        track()
+        return value
+      },
+      set(newValue: T) {
+        clearTimeout(timeoutId)
+        timeoutId = setTimeout(() => {
+          value = newValue
+          // 告诉Vue去触发界面更新
+          trigger()
+        }, delay)
+      }
+    }
+  })
+}
+
 </script>
