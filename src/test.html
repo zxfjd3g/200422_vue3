@@ -21,16 +21,67 @@
     // delete proxy1.a.b
     // console.log(proxy1)
 
-    const proxy2 = reactive({
+    // const proxy2 = reactive({
+    //   a: {
+    //     b: 1,
+    //     c: [2, 3]
+    //   }
+    // })
+    // // proxy2.a.b = 2
+    // // delete proxy2.a.b
+    // proxy2.a.c[0]++
+    // console.log(proxy2)
+
+    const proxy3 = shallowReadonly({
       a: {
         b: 1,
         c: [2, 3]
       }
     })
-    // proxy2.a.b = 2
-    // delete proxy2.a.b
-    proxy2.a.c[0]++
-    console.log(proxy2)
+    // proxy3.a = 'xxx'  // error
+    // proxy3.a.b = 2  // 可以
+    // delete proxy3.a
+    // delete proxy3.a.b
+
+    const proxy4 = readonly({
+      a: {
+        b: 1,
+        c: [2, 3]
+      }
+    })
+    // proxy4.a = 'xxx'  // error
+    // proxy4.a.b = 2  // error
+    // delete proxy4.a
+    // delete proxy4.a.b
+
+    const ref1 = shallowRef({
+      a: {
+        b: 1,
+      }
+    })
+
+    // console.log(ref1.value)
+    // ref1.value = 'ccc'  // 劫持到
+    // ref1.value.a = 'dddd' // 劫持不到
+
+    const ref2 = ref({
+      a: {
+        b: 1,
+        c: {
+          d: 2
+        }
+      }
+    })
+    // ref2.value = 'ccc'  // 劫持到
+    // ref2.value.a = 'dddd' // 劫持到
+    // console.log(ref2)
+
+    /* 测试判断函数 */
+    console.log(isReactive(reactive({})))
+    console.log(isRef(ref({})))
+    console.log(isReadonly(readonly({})))
+    console.log(isProxy(reactive({})))
+    console.log(isProxy(readonly({})))
 
 
   </script>
