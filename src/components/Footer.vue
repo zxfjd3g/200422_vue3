@@ -10,28 +10,45 @@
   </div>
 </template>
 
-<script type="text/ecmascript-6">
+<script lang="ts">
+import { Todo } from '@/types/todo'
+import { computed, toRef } from 'vue'
   export default {
     props: {
-      todos: Array,
-      clearCompletedTodos: Function,
-      checkAll: Function,
+      todos: {
+        type: Array as () => Todo[],
+        required: true
+      },
+      clearCompletedTodos: {
+        type: Function,
+        required: true
+      },
+      checkAll: {
+        type: Function,
+        required: true
+      },
     },
 
-    computed: {
-      completeSize () {
-        return this.todos.reduce((preTotal, todo, index) => preTotal + (todo.completed ? 1 : 0), 0)
-      },
+    setup (props) { // 尽量不要解构props中的数据使用
+      const completeSize = computed(() => {
+        return props.todos.reduce((preTotal, todo, index) => preTotal + (todo.completed ? 1 : 0), 0)
+      })
 
-      isCheckAll: {
+      const isCheckAll = computed({
         get () {
-          return this.todos.length === this.completeSize && this.completeSize>0 // 读属性值就会自动调用对应的getter方法
+          return props.todos.length === completeSize.value && completeSize.value>0
         },
-        set (value) { // value代表当前勾选状态的boolean值
-          this.checkAll(value)
+        
+        set (value) {
+          props.checkAll(value)
         }
-      } 
-    }
+      })
+
+      return {
+        completeSize,
+        isCheckAll
+      }
+    },
   }
 </script>
 

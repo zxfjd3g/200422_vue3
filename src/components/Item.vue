@@ -12,51 +12,77 @@
 2. 设计数据
 3. 在监听回调中, 更新数据
  */
-<script type="text/ecmascript-6">
-  export default {
-    props: { // 声明属性的属性名和属性值的类型
-      todo: Object,
-      deleteTodo: Function,
-      index: Number,
-      updateTodo: Function
-    },
+<script lang="ts">
+import { Todo } from '@/types/todo';
+import { computed, defineComponent, ref } from 'vue';
 
-    data () {
-      return {
-        bgColor: 'white',
-        isShow: false
-      }
+export default defineComponent({
+  props: { // 声明属性的属性名和属性值的类型
+    todo: {
+      type: Object as () => Todo,  // 断言为函数返回的类型
+      required: true
     },
-
-    computed: {
-      isComplete: {
-        get () {
-          return this.todo.completed
-        },
-        set (value) {
-          this.updateTodo(this.todo, value)
-        }
-      }
+    deleteTodo: {
+      type: Function,
+      required: true
     },
+    index: {
+      type: Number,
+      required: true
+    },
+    updateTodo: {
+      type: Function,
+      required: true
+    }
+  },
 
-    methods: {
-      handleEnter (isEnter) {
-        if (isEnter) {
-          this.bgColor = '#aaaaaa',
-          this.isShow = true
-        } else {
-          this.bgColor = '#ffffff',
-          this.isShow = false
-        }
+
+  setup ({
+    todo,
+    index,
+    deleteTodo,
+    updateTodo
+  }) {
+    
+    const bgColor = ref('white')
+    const isShow = ref(false)
+
+    // 计算属性
+    const isComplete = computed({
+      get () {
+        return todo.completed
       },
+      set (value) {
+        updateTodo(todo, value)
+      }
+    })
 
-      deleteItem () {
-        if (window.confirm('确定删除吗?')) {
-          this.deleteTodo(this.index)
-        }
+    function handleEnter (isEnter: boolean) {
+      if (isEnter) {
+        bgColor.value = '#aaaaaa',
+        isShow.value = true
+      } else {
+        bgColor.value = '#ffffff',
+        isShow.value = false
       }
     }
-  }
+
+    function deleteItem () {
+      if (window.confirm('确定删除吗?')) {
+        deleteTodo(index)
+      }
+    }
+
+    return {
+      bgColor,
+      isShow,
+      isComplete,
+      handleEnter,
+      deleteItem
+    }
+  },
+
+})
 
 </script>
 

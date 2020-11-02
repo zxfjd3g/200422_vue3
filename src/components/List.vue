@@ -5,8 +5,8 @@
   </ul>
 </template>
 
-<script type="text/ecmascript-6">
-  import Item from './Item'
+<script lang="ts">
+  import Item from './Item.vue'
   export default {
     // 声明接收属性: 属性名   ==>组件对象多了一个todos属性
     props: ['todos', 'deleteTodo', 'updateTodo'],

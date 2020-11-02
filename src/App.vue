@@ -19,15 +19,13 @@
   import Footer from '@/components/Footer.vue'
   import { saveTodos, readTodos } from '@/utils/storageUtils'
   import { onMounted, reactive, toRefs, watch } from 'vue'
-  import { Todo } from './types/todo'
+  import { Todo } from './types/Todo'
   export default { // 配置对象
-
-
 
     setup () {
 
       // 定义响应式数据
-      const state = reactive<any>({
+      const state = reactive<{todos: Todo[]}>({
         todos: []
       })
 
@@ -57,7 +55,8 @@
       }
 
       const updateTodo = (todo: Todo, isCheck: boolean) => {
-        state.todo.completed = isCheck
+        todo.completed = isCheck
+        console.log(state.todos)
       }
 
 
